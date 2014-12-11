@@ -39,4 +39,19 @@ class Module
             ),
         );
     }
+    
+    public function getViewHelperConfig() 
+    {
+        return array(
+            'factories' => array(
+                'headLink' => function($serviceManager) {
+                    $config = $serviceManager->getServiceLocator()->get('config');
+                    $helper = new View\Helper\HeadLink();
+                    $helper->setConfig($config[__NAMESPACE__]);
+                    //var_dump($config[__NAMESPACE__]);
+                    return $helper;
+                }
+            )
+        );
+    }
 }

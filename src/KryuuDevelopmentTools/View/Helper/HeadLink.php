@@ -9,35 +9,49 @@ namespace KryuuDevelopmentTools\View\Helper;
 use Zend\View\Helper\HeadLink as HeadLinkViewHelper;
 use Leafo\ScssPhp\Compiler as scssc;
 
-class HeadLink extends HeadlinkViewHelper
+class HeadLink extends HeadLinkViewHelper
 {
-	private $usingSass = '';
-	private $publicPath = '../../../../../../public/';
-	private $tmpPath = '/cache';
-	private $tmpID = null;
-	private $isRealPublicPath = FALSE;
-	private $cacheTimeOut = 3660;
-	private $caching = FALSE;
-	private $isMinifying = array
-	(
-		'css' => FALSE,
-	);
-	private $time = null;
+	private $usingSass          = null;
+	private $publicPath         = null;
+	private $tmpPath            = null;
+	private $tmpID              = null;
+	private $isRealPublicPath   = null;
+	private $cacheTimeOut       = null;
+	private $caching            = null;
+	private $minifying          = null;
+	private $time               = null;
 	
 	
-	public function __construct($publicPath='./')
+	public function __construct()
 	{
-		if($this->publicPath == '')
-		{
-			$this->publicPath = $publicPath;
-		}
+		parent::__construct();
+	}
+    
+    public function setConfig($config)
+    {
+        $this->usingSass        = isset($config['using sass']) 
+                                    && $this->usingSass == null ? $config['using sass'] : null;
+        $this->publicPath       = isset($config['public path']) 
+                                    && $this->publicPath == null ? $config['public path'] : null;
+        $this->tmpPath          = isset($config['tmp path']) 
+                                    && $this->tmpPath == null ? $config['tmp path'] : null;
+        $this->tmpID            = isset($config['tmp id']) 
+                                    && $this->tmpID == null ? $config['tmp id'] : null;
+        $this->isRealPublicPath = isset($config['is real public path']) 
+                                    && $this->isRealPublicPath == null ? $config['is real public path'] : null;
+        $this->cacheTimeOut     = isset($config['cache timeout']) 
+                                    && $this->cacheTimeOut == null ? $config['cache timeout'] : null;
+        $this->caching          = isset($config['caching']) 
+                                    && $this->caching == null ? $config['caching'] : null;
+        $this->minifying        = isset($config['minifying']) 
+                                    && $this->minifying == null ? $config['minifying'] : null;
+
 		if($this->isRealPublicPath == FALSE)
 		{
 			$this->publicPath = realpath(__DIR__ . '/' . $this->publicPath);
 		}
-		$this->tmpID = uniqid();
-		parent::__construct();
-	}
+		//$this->tmpID = uniqid();
+    }
 	
 	/**
      * Create item for stylesheet link item
@@ -47,7 +61,7 @@ class HeadLink extends HeadlinkViewHelper
      */
     public function createDataStylesheet(array $args)
     {
-		
+        
 		$args_tmp = $args;
         $href = array_shift($args_tmp);
 		$css = '';
@@ -77,13 +91,15 @@ class HeadLink extends HeadlinkViewHelper
 			
 			if ($file['extension'] == 'css')
 			{
-				if ($this->isMinifying['css']) 
+				if ($this->minifying['css']) 
 				{
 					$filters = array(/*...*/);
 					$plugins = array(/*...*/);
 
 					//$minifier = new CssMinifier(file_get_contents($file), $filters, $plugins);
 					//$css = $minifier->getMinified();
+                    $css = file_get_contents($file['realpath']);
+                    $args[0] = $this->cacheFile($css, $file, TRUE);
 				}
 			}
 			
@@ -137,7 +153,8 @@ class HeadLink extends HeadlinkViewHelper
 		
 		if (!$this->isCached($file['cachepath'],$cacheOverwrite))
 		{
-			echo '<!-- Renewing cache for ' . $file['cachefilename'] . ' at ' . date('Y-m-d H:i:s') . "-->\n";
+            $date = new \DateTime();
+			echo '<!-- Renewing cache for ' . $file['cachefilename'] . ' at ' . $date->format('Y-m-d H:i:s') . "-->\n";
 			file_put_contents($file['cachepath'], $data);
 			return $file['cachehref'];
 		}
@@ -156,7 +173,7 @@ class HeadLink extends HeadlinkViewHelper
 					.$difference->h.' hour(s), '
 					.$difference->i.' minut(s), '
 					.$difference->s.' second(s) ' . "-->\n";
-			var_dump($var);
+            
 			return $file['cachehref'];
 		}
 		return $file['href'];
